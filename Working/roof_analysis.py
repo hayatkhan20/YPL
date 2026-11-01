@@ -802,7 +802,7 @@ checks = {
 evaluation = roof_mask & valid & ~obstructions
 rmse = float(np.sqrt(np.mean(final_residual[evaluation] ** 2)))
 summary = {
-    "status": "automatic_results_pending_final_QA",
+    "status": "automatic_results_require_human_QA_QC",
     "roof_plan_area_m2": float(roof_mask.sum() * pixel_area),
     "obstruction_candidate_plan_area_m2": float(obstructions.sum() * pixel_area),
     "main_roof_regions": len(main_planes),
@@ -837,7 +837,7 @@ summary = {
         "edge_distance": EDGE_DISTANCE,
         "minimum_array_panels": MIN_ARRAY_PANELS,
     },
-    "limitation": "Checks validate generated geometry against detected masks; final RGB QA is pending.",
+    "limitation": "Checks validate generated geometry against detected masks; algorithm outputs require human QA/QC.",
 }
 (OUTPUT_DIR / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
 for name, passed in checks.items():

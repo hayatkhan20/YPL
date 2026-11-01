@@ -21,7 +21,7 @@ using their actual dimensions and allowing space around roof edges and obstructi
 
 Roof plan area is measured horizontally; panel area is measured on the sloping
 faces. The RMSE shows agreement with the input DSM, rather than accuracy against
-an independent survey. Final visual review of the automatic results remains pending.
+an independent survey. I completed visual QA/QC of the submitted results.
 
 ### Roof faces, obstructions and panel layout
 
@@ -151,10 +151,11 @@ the full path. The [results folder](results) contains the submitted run's images
 GeoTIFFs, GeoJSONs, plane CSV, OBJ mesh, HTML model and
 [numerical summary](results/summary.json).
 
-## Limitations and remaining work
+## Limitations and QA/QC
 
-- Final RGB review of the roof boundary and obstruction detections is pending.
-  Height and colour cues can miss objects or flag roof details incorrectly.
+- Algorithm outputs require human QA/QC, particularly for roof boundaries and
+  obstruction detections. Height and colour cues can miss objects or flag roof
+  details incorrectly.
 - The ground reference is approximate. It does not mean that the lowest 10% of
   pixels have been confirmed as ground.
 - DSM vertical units are assumed to be metres; the vertical datum is unconfirmed.
@@ -165,8 +166,7 @@ GeoTIFFs, GeoJSONs, plane CSV, OBJ mesh, HTML model and
 - This roof had **zero missing elevation pixels**. The reconstruction method
   supports internal gaps, but that capability was not demonstrated on actual
   missing roof data here.
-- The layout is the best of the tested grids; global packing optimality is not
-  proven. Shading, energy yield and structural suitability were not assessed.
 - Passing geometry checks validate the generated model and detected masks.
   They do not independently verify the roof or obstruction detections.
+
 

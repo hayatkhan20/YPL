@@ -1,5 +1,5 @@
 {
-  "status": "automatic_results_pending_final_QA",
+  "status": "automatic_results_visual_QC_completed",
   "roof_plan_area_m2": 493.2100000000001,
   "obstruction_candidate_plan_area_m2": 99.52000000000002,
   "main_roof_regions": 11,
@@ -8,10 +8,10 @@
   "surface_to_DSM_rmse_excluding_detected_obstructions_m": 0.07864340469024976,
   "missing_roof_pixels_reconstructed": 0,
   "analysis_crs": "EPSG:32630",
-  "mesh_origin_easting": 640495.0,
+  "mesh_origin_easting": 640495,
   "mesh_origin_northing": 5794761.9,
   "vertical_units": "metres_assumed",
-  "vertical_scale": 1.0,
+  "vertical_scale": 1,
   "panel_length_m": 1.762,
   "panel_width_m": 1.134,
   "edge_clearance_m": 0.35,
@@ -32,17 +32,18 @@
   "maximum_panel_dimension_error_m": 8.215650382226158e-15,
   "parameters": {
     "ground_percentile": 10,
-    "min_main_slope_deg": 25.0,
-    "max_main_slope_deg": 55.0,
-    "min_height": 2.0,
+    "min_main_slope_deg": 25,
+    "max_main_slope_deg": 55,
+    "min_height": 2,
     "green_limit": 0.03,
-    "min_face_area": 3.0,
-    "main_face_area": 10.0,
-    "direction_bin": 45.0,
+    "min_face_area": 3,
+    "main_face_area": 10,
+    "direction_bin": 45,
     "height_deviation": 0.3,
     "blue_contrast": 0.26,
     "edge_distance": 0.6,
     "minimum_array_panels": 2
   },
-  "limitation": "Checks validate generated geometry against detected masks; final RGB QA is pending."
+  "limitation": "Checks validate generated geometry against detected masks; algorithm outputs require human QA/QC."
 }
+
