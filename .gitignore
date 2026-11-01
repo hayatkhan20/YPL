@@ -1,0 +1,9 @@
+Data/*
+!Data/README.md
+.ipynb_checkpoints/
+__pycache__/
+*.py[cod]
+.venv/
+.env
+Thumbs.db
+Desktop.ini
