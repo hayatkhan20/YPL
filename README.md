@@ -1,5 +1,7 @@
 # 3D Roof Reconstruction and Solar Panel Placement
 
+[Watch the video demonstration](https://drive.google.com/file/d/1g29jvZYRLYrVtTgtgJtf5z0BVg2t76mu/view?usp=sharing)
+
 I built this workflow for the Your Power Labs technical assessment. I used DSM
 elevations to reconstruct the roof and RGB imagery to help separate vegetation
 and rooftop obstructions. I then placed solar panels on the sloping roof faces,
