@@ -1,169 +1,170 @@
 # 3D Roof Reconstruction and Solar Panel Placement
 
-Technical assessment for Your Power Labs, by Hayat.
+I built this workflow for the Your Power Labs technical assessment. I used DSM
+elevations to reconstruct the roof and RGB imagery to help separate vegetation
+and rooftop obstructions. I then placed solar panels on the sloping roof faces,
+using their actual dimensions and allowing space around roof edges and obstructions.
 
-[Video demonstration](https://canva.link/66y1chp2zmou3br)
-
-A Python workflow that uses DSM elevations and RGB imagery to reconstruct a roof,
-identify obstructions and place standard-sized solar modules on sloping roof faces.
-This submission is an automatic baseline. Final visual QA remains pending.
-
-## Results
+## Final results
 
 | Measure | Result |
 | --- | --- |
-| Roof plan area | 493.21 m² |
+| Refined roof plan area | 493.21 m² |
 | Main supporting roof regions | 11 |
 | Detected obstruction plan area | 99.52 m² |
 | Panels placed | 55 |
 | Total panel surface area | 109.90 m² |
 | Surface-to-DSM RMSE outside detected obstructions | 0.079 m |
-| Missing roof pixels reconstructed in this dataset | 0 |
-| Geometry checks | All nine pass |
+| Geometry checks | 9 of 9 pass |
 
-The roof area is a horizontal footprint; panel area is measured on the sloping
-faces. They are different quantities. The RMSE measures agreement with the input
-DSM, not accuracy against an independent survey.
+Roof plan area is measured horizontally; panel area is measured on the sloping
+faces. The RMSE shows agreement with the input DSM, rather than accuracy against
+an independent survey. Final visual review of the automatic results remains pending.
 
-## Files and visual results
+### Roof faces, obstructions and panel layout
 
-- [Readable notebook](Working/Roof_Analysis_Final.ipynb)
-- [Matching Python source](Working/roof_analysis.py)
-- [Final roof, obstructions and panel layout](results/final_layout.png)
-- [Geometry checks](results/step_10_geometry_checks.png)
-- [Numerical summary](results/summary.json)
-- [Interactive 3D model](results/roof_3d.html): download the file and open it in a
-  browser. It includes Plotly locally and does not need an internet connection.
-- The `results` folder also contains intermediate maps, GeoTIFFs, GeoJSONs,
-  roof-plane CSV and an OBJ mesh.
+![Roof faces, detected obstructions and the final panel layout](results/final_layout.png)
 
-## Setup and input data
+Red areas show detected obstructions. The lime-green rectangles show the panels.
 
-The submitted results were generated on Windows using Python 3.11.17.
-`requirements.txt` records the package versions in the selected environment.
-The following commands are for Anaconda Prompt on Windows:
+### Reconstructed roof
+
+![Reconstructed roof surface](results/step_07_roof_mesh.png)
+
+[Download the interactive 3D model](results/roof_3d.html) and open it in a browser
+to rotate the roof and inspect the panels and obstructions. The HTML file includes
+Plotly and works offline.
+
+### Geometry checks
+
+![Nine geometry checks for the 55-panel layout](results/step_10_geometry_checks.png)
+
+The checks cover panel presence, containment within usable areas, avoidance of
+detected obstructions, overlap, 3D panel dimensions, panel gaps, reconstructed
+elevations, mesh-edge incidence and triangle orientation.
+
+## How I approached the problem
+
+1. **Check the inputs.** I checked the raster grids, CRS and pixel size before
+   combining the DSM and RGB data. The clipped DSM defines the property area.
+   The supplied data use EPSG:32630 and 0.10 m pixels.
+
+2. **Identify the roof.** I estimated a low ground reference from the 10th
+   percentile of valid property elevations. Height above that reference and the
+   RGB green index, `(2G - R - B) / (R + G + B + 1)`, help separate the roof
+   from low surfaces and vegetation. I cleaned the mask and kept the largest
+   connected region.
+
+3. **Calculate slope and aspect.** I used a one-pixel Gaussian filter before
+   calculating the east-west and north-south elevation gradients. Slope comes
+   from the gradient magnitude. Downhill aspect is measured clockwise from
+   grid north.
+
+4. **Identify and fit roof faces.** I grouped four-connected pixels with similar
+   aspect, then fitted `z = ax + by + c` using iteratively trimmed least squares.
+   Rejecting elevation outliers reduced their influence on the fitted planes.
+   The initial 20 faces were reduced to 11 main supporting regions using the
+   area and slope filter below.
+
+5. **Reconstruct the roof and detect obstructions.** Plane predictions provide
+   regularized elevations and support reconstruction of internal gaps. I compared
+   the DSM with the predicted roof and combined height differences with blue-colour
+   and compact-brightness cues to flag obstructions. Shared mesh vertices connect
+   neighbouring faces into a continuous height-field surface.
+
+6. **Place the panels.** I transformed each roof face into coordinates on its
+   sloping plane, applied clearances and tested portrait and landscape grids
+   with shifted starting positions. I kept a compact connected panel group on
+   each face, then checked the resulting geometry.
+
+## Main assumptions
+
+| Setting | Value used |
+| --- | --- |
+| Ground reference | 10th percentile of valid elevations inside the property |
+| Minimum height above ground reference | 2 m |
+| Green-index cutoff | 0.03 |
+| Initial face seeds | At least 3 m²; 45° aspect sectors |
+| Maximum distance from initial face support | 0.6 m |
+| Main supporting regions | At least 10 m²; slope 25°–55° |
+| Obstruction height test | Absolute DSM-to-plane difference greater than 0.30 m |
+| Blue contrast | `(B - R) / (B + R + 1) > 0.26`, with additional colour tests |
+| Panel dimensions | 1.762 × 1.134 m |
+| Panel gap | 0.02 m |
+| Roof-edge and obstruction clearance | 0.35 m each |
+| Minimum connected panel group | 2 panels |
+
+I used the dimensions of the
+[JA Solar JAM54D40 LB module](https://www.jasolar.eu/fileadmin/data/4.0/JAM54D40_LB/2024/JAM54D40_LB.pdf).
+This is the selected module size, not a universal size for all solar panels.
+The clearances are assumptions for this assessment. Additional image and
+component-shape thresholds are explicit in the code.
+
+## Setup and run
+
+I ran the final notebook on Windows with Python 3.11.17. The six core library
+versions in `requirements.txt` match the versions imported by that environment.
+
+In Anaconda Prompt:
 
 ```bat
+git clone https://github.com/hayatkhan20/YPL.git
+cd YPL
 conda create -n ypl python=3.11 -y
 conda activate ypl
 set "PYTHONNOUSERSITE=1"
 python -m pip install -r requirements.txt
+python -m ipykernel install --user --name ypl --display-name "Python (YPL)" --env PYTHONNOUSERSITE 1
 ```
 
-Run these commands from the repository root. If a working `ypl` environment
-already exists, activate it and skip the environment-creation command.
+If a working `ypl` environment already exists, skip the environment-creation step.
 
-Place the assessment's supplied rasters in `Data`:
+Place the separately supplied assessment rasters in the `Data` folder:
 
-- `Data/rgb.tif`
-- `Data/dsm_full.tif`
-- `Data/dsm_clipped.tif`
+- `rgb.tif`
+- `dsm_full.tif`
+- `dsm_clipped.tif`
 
-The input rasters are supplied separately and are excluded from this repository.
-
-## Run
-
-From the repository root:
+Then open the notebook:
 
 ```bat
-conda activate ypl
-set "PYTHONNOUSERSITE=1"
 cd Working
 python -m notebook
 ```
 
-Open `Roof_Analysis_Final.ipynb`, select the `ypl` environment's kernel and run the
-cells from top to bottom. If the environment is not listed, register it with:
+Open [Roof_Analysis_Final.ipynb](Working/Roof_Analysis_Final.ipynb), select
+**Python (YPL)** and run the cells from top to bottom.
 
-```bat
-python -m ipykernel install --user --name ypl --display-name "Python (YPL)" --env PYTHONNOUSERSITE 1
-```
-
-Alternatively, while inside `Working`, run:
+The same code is available as [roof_analysis.py](Working/roof_analysis.py).
+To run it as a script, stay inside `Working` and use:
 
 ```bat
 python roof_analysis.py
 ```
 
-Close each plot window to continue when running the script. The working directory
-must be `Working` because input paths are relative to it.
+Close each plot window to continue when running the script.
 
-Each run writes a fresh folder under `~/YPL_outputs/run_<timestamp>` and prints its
-full location. On Windows this is normally `C:/Users/<user>/YPL_outputs`.
-The committed `results` folder contains the outputs from the submitted run.
+Each run saves outputs in a new `~/YPL_outputs/run_<timestamp>` folder and prints
+the full path. The [results folder](results) contains the submitted run's images,
+GeoTIFFs, GeoJSONs, plane CSV, OBJ mesh, HTML model and
+[numerical summary](results/summary.json).
 
-## Approach
+## Limitations and remaining work
 
-1. Check raster alignment, CRS and pixel size. Use the clipped DSM's valid extent
-   to identify the property area. The supplied data use EPSG:32630 and 0.10 m pixels.
-2. Estimate a low ground reference using the 10th percentile of valid property
-   elevations. Select pixels more than 2 m above it and use the RGB green index
-   `(2G - R - B) / (R + G + B + 1)` to reduce vegetation. Keep the largest connected
-   roof region and clean its mask.
-3. Apply a Gaussian filter with a one-pixel standard deviation for derivatives.
-   Calculate slope as `atan(sqrt(gE² + gN²))` and downhill aspect as
-   `atan2(-gE, -gN)`, converted to degrees in [0, 360), clockwise from grid north.
-4. Group four-connected pixels in 45° aspect sectors. Keep initial face seeds of
-   at least 3 m² and refine the roof mask using seed support within 0.6 m.
-5. Fit `z = ax + by + c` by iteratively trimmed least squares. Reject elevation
-   outliers using the median residual and robust spread. Plane predictions
-   regularize elevation noise and support reconstruction of internal gaps.
-6. Retain main supporting regions with plan area at least 10 m² and slope between
-   25° and 55°. Flag obstructions using absolute height residuals above 0.30 m,
-   blue-colour cues and compact bright details. Clean the combined mask and
-   exclude it from usable areas.
-7. Create a continuous height-field mesh using shared pixel corners and two
-   triangles per roof pixel. Average adjacent plane predictions at shared nodes.
-8. Transform each face into orthonormal coordinates on its sloping plane. Apply
-   edge and obstruction clearances, test portrait and landscape grids with shifted
-   origins, and retain a compact connected panel group on each face.
-
-## Numerical assumptions
-
-| Setting | Value |
-| --- | --- |
-| Ground-reference percentile | 10 |
-| Minimum height above the estimated ground | 2 m |
-| Green-index cutoff | 0.03 |
-| Initial face seed area | ≥ 3 m² |
-| Aspect sector width | 45° |
-| Maximum distance from initial face support | 0.6 m |
-| Main support region area | ≥ 10 m² |
-| Main support region slope | 25°–55° |
-| Absolute height residual for obstruction detection | > 0.3 m |
-| Blue contrast `(B - R) / (B + R + 1)` | > 0.26, plus colour conditions |
-| Panel length × width | 1.762 × 1.134 m |
-| Panel gap | 0.02 m |
-| Roof-edge clearance | 0.35 m |
-| Obstruction clearance | 0.35 m |
-| Minimum connected panel group | 2 panels |
-
-Module dimensions follow the selected
-[JA Solar JAM54D40 LB](https://www.jasolar.eu/fileadmin/data/4.0/JAM54D40_LB/2024/JAM54D40_LB.pdf).
-These dimensions are a module choice, not a universal panel standard. Clearances
-are geometric assumptions for this assessment, not verified installation rules.
-Additional brightness and component-shape thresholds are explicit in the source.
-
-## Validation and limitations
-
-The nine checks test panel presence, containment in usable areas, avoidance of
-detected obstructions, no panel overlap, correct 3D dimensions, panel gaps, finite
-reconstructed roof elevations, mesh edges with at most two incident triangles,
-and upward-facing triangles. A small numerical tolerance handles floating-point
-rounding; for example, a reported gap of 0.019999999999996 m represents 0.02 m.
-
-- Final RGB review of roof boundaries and obstruction detections remains pending.
-  Height and colour thresholds can miss objects or flag roof details incorrectly.
-- The 10th percentile is an approximate reference, not a ground survey or a
-  classification of the lowest 10% of pixels as ground.
+- Final RGB review of the roof boundary and obstruction detections is pending.
+  Height and colour cues can miss objects or flag roof details incorrectly.
+- The ground reference is approximate. It does not mean that the lowest 10% of
+  pixels have been confirmed as ground.
 - DSM vertical units are assumed to be metres; the vertical datum is unconfirmed.
 - The 10 m² and 25°–55° support filter is a simplifying choice for this dataset.
-  Genuine small, shallow or steep roof sections may be excluded.
-- Shared vertices provide approximate ridge joins, not exact plane intersections
-  or a closed, watertight building model. The obstruction overlay can retain DSM noise.
-- The workflow supports internal missing-data reconstruction, but this roof had
-  zero missing pixels, so that capability was not demonstrated on actual roof gaps.
-- The best tested panel grid is retained; global packing optimality is not proven.
-  Shading, energy yield and structural suitability were not assessed.
-- Passing checks validate the generated model and detected masks. They do not
-  independently establish the accuracy of the roof or obstruction detections.
+  It can exclude genuine small, shallow or steep roof sections.
+- Shared vertices give approximate ridge joins. This is a continuous roof
+  surface, not an exact CAD model or a closed building solid.
+- This roof had **zero missing elevation pixels**. The reconstruction method
+  supports internal gaps, but that capability was not demonstrated on actual
+  missing roof data here.
+- The layout is the best of the tested grids; global packing optimality is not
+  proven. Shading, energy yield and structural suitability were not assessed.
+- Passing geometry checks validate the generated model and detected masks.
+  They do not independently verify the roof or obstruction detections.
+
